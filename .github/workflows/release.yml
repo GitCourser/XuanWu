@@ -1,0 +1,90 @@
+name: Build and Release
+
+on:
+  release:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  releases-matrix:
+    name: Release Go Binary
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [linux, windows]
+        goarch: [amd64, arm64]
+        exclude:
+          - goarch: arm64
+            goos: windows
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Get version
+      run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+    - name: Set version
+      run: |
+        echo "Version: $VERSION"
+        sed -i "s/\"0.0.0\"/\"$VERSION\"/" config/config.go
+
+    - name: Add UI
+      run: |
+        wget https://github.com/GitCourser/xuanwu-ui/releases/latest/download/xuanwu-ui.tar.gz
+        tar -zxf xuanwu-ui.tar.gz
+        mv dist public/
+        ls -R
+
+    - uses: wangyoucao577/go-release-action@v1
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        goos: ${{ matrix.goos }}
+        goarch: ${{ matrix.goarch }}
+        goversion: "1.24"
+        binary_name: "xuanwu"
+
+  build-docker:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
+
+      - name: Set version
+        run: |
+          echo "Version: $VERSION"
+          sed -i "s/\"0.0.0\"/\"$VERSION\"/" config/config.go
+
+      - name: Add UI
+        run: |
+          wget https://github.com/GitCourser/xuanwu-ui/releases/latest/download/xuanwu-ui.tar.gz
+          tar -zxf xuanwu-ui.tar.gz
+          mv dist public/
+          ls -R
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        env:
+          user: ${{ secrets.DOCKERHUB_USER }}
+        with:
+          context: .
+          push: true
+          tags: ${{ env.user }}/xuanwu:latest,${{ env.user }}/xuanwu:${{ env.VERSION }}
+          platforms: linux/amd64,linux/arm64
