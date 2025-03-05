@@ -81,7 +81,7 @@ func (p *ApiData) Init() {
 		log.Println("加载后台文件失败,web服务停止")
 		return
 	}
-	
+
 	// 使用 NoRoute 处理所有非 API 请求
 	RootRoute.NoRoute(func(c *gin.Context) {
 		// 如果是 API 请求，返回 404
@@ -89,13 +89,13 @@ func (p *ApiData) Init() {
 			c.Status(http.StatusNotFound)
 			return
 		}
-		
+
 		// 非 API 请求，尝试提供静态文件
 		path := c.Request.URL.Path
 		if path == "/" {
 			path = "index.html"
 		}
-		
+
 		content, err := fs.ReadFile(distFS, strings.TrimPrefix(path, "/"))
 		if err != nil {
 			// 如果文件不存在，返回 index.html
@@ -104,8 +104,12 @@ func (p *ApiData) Init() {
 				c.Status(http.StatusNotFound)
 				return
 			}
+			// 回退到index.html时也添加缓存
+			c.Header("Cache-Control", "max-age=31536000, public")
+			c.Data(http.StatusOK, "text/html", content)
+			return
 		}
-		
+
 		// 设置适当的 Content-Type
 		if strings.HasSuffix(path, ".html") {
 			c.Header("Content-Type", "text/html")
@@ -114,7 +118,9 @@ func (p *ApiData) Init() {
 		} else if strings.HasSuffix(path, ".js") {
 			c.Header("Content-Type", "application/javascript")
 		}
-		
+
+		// 添加缓存头
+		c.Header("Cache-Control", "max-age=31536000, public")
 		c.Data(http.StatusOK, c.ContentType(), content)
 	})
 
