@@ -81,18 +81,18 @@ func AddRunFunc(TaskInfo TaskInfo) {
 	if TaskInfo.System {
 		logname = ""
 	}
-	
+
 	// 初始化日志
 	log, writer := xwlog.LogInitWithConfig(logname, &xwlog.LogConfig{TaskLogFormat: true})
 	TaskInfo.Writer = writer
 	TaskInfo.Log = log
-	
+
 	// 遍历时间数组,为每个时间创建定时任务
 	for _, timeStr := range TaskInfo.Times {
 		// 添加定时任务
 		var id cron.EntryID
 		var err error
-		
+
 		if TaskInfo.System && TaskInfo.Func != nil {
 			// 系统任务使用自定义函数
 			id, err = C.AddFunc(timeStr, TaskInfo.Func)
@@ -104,12 +104,12 @@ func AddRunFunc(TaskInfo TaskInfo) {
 				}
 			})
 		}
-		
+
 		if err != nil {
 			log.Printf("添加定时任务失败[%s]: %v\n", timeStr, err)
 			continue
 		}
-		
+
 		// 保存到任务映射表
 		TaskData[id] = TaskInfo
 	}

@@ -64,7 +64,7 @@ func EnsureFile(path string) error {
 	if err := EnsureDir(dir); err != nil {
 		return err
 	}
-	
+
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		file, err := os.Create(path)
 		if err != nil {

@@ -47,7 +47,7 @@ func main() {
 
 	// 退出时记录日志
 	defer func() {
-		log.Println("玄武系统退出")
+		log.Println("玄武退出")
 	}()
 
 	cfg, err := config.ReadConfigFileToJson()
@@ -65,7 +65,7 @@ func main() {
 	go xuanwu.CronInit(cfg)
 
 	fmt.Println(time.Now())
-	log.Println("玄武系统启动，版本：v" + config.Version)
+	log.Println("玄武启动, 版本: v" + config.Version)
 
 	<-sigChan
 }

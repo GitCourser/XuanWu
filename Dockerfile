@@ -19,16 +19,17 @@ COPY --from=builder /app/build/. .
 ENV XW_HOME=/app
 ENV TZ=Asia/Shanghai
 ENV PYTHONPATH=${XW_HOME}
-ENV NPM_CONFIG_CACHE=""
 ENV NODE_PATH="/usr/local/lib/node_modules:${XW_HOME}"
 ENV NODE_OPTIONS=--tls-cipher-list=DEFAULT@SECLEVEL=0
 
 RUN apk add --no-cache libstdc++ libgcc && \
-    npm install -g got@~11.8.0 && \
+    npm install -g --no-cache got@~11.8.0 && \
     npm config set registry https://registry.npmmirror.com && \
     pip config set global.no-cache-dir true && \
     pip install requests && \
-    pip config set global.index-url https://mirrors.aliyun.com/pypi/simple && \
+    pip config set global.index-url https://mirrors.huaweicloud.com/artifactory/pypi-public/simple && \
+    cp -a /etc/apk/repositories /etc/apk/repositories.bak && \
+    sed -i 's/dl-cdn.alpinelinux.org/mirrors.huaweicloud.com/g' /etc/apk/repositories && \
     wget https://github.com/whyour/qinglong/raw/refs/heads/develop/sample/notify.js -O /app/notify.js && \
     wget https://github.com/whyour/qinglong/raw/refs/heads/develop/sample/notify.py -O /app/notify.py && \
     sed -i 's/+ (await one(/\/\/ (await one(/' /app/notify.js && \

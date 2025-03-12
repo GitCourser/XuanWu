@@ -55,7 +55,7 @@ func HandlerFileList(c *gin.Context) {
 		if err != nil {
 			continue
 		}
-		
+
 		relativePath, err := filepath.Rel(filepath.Join(pathutil.GetRootDir(), pathutil.DATA_DIR), filepath.Join(fullPath, f.Name()))
 		if err != nil {
 			continue

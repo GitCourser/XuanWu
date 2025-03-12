@@ -107,16 +107,16 @@ func DecryptByAes(data string) ([]byte, error) {
 	if data == "" {
 		return nil, errors.New("加密数据不能为空")
 	}
-	
+
 	dataByte, err := base64.StdEncoding.DecodeString(data)
 	if err != nil {
 		return nil, errors.New("base64解码失败：" + err.Error())
 	}
-	
+
 	if len(dataByte) == 0 || len(dataByte)%aes.BlockSize != 0 {
 		return nil, errors.New("无效的加密数据长度")
 	}
-	
+
 	// key不能泄露
 	PwdKey := generateKey()
 	return AesDecrypt(dataByte, PwdKey)

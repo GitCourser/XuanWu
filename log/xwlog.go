@@ -43,19 +43,17 @@ func (w *taskLogWriter) SetStartTime(t time.Time) {
 func (w *taskLogWriter) Write(p []byte) (n int, err error) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	
-	now := time.Now()
-	
-	// 如果是新的任务执行（lastTime为零或与当前时间相差超过1秒）
-	if w.lastTime.IsZero() || now.Sub(w.lastTime).Seconds() > 1 {
-		// 写入时间头,使用startTime
-		timeHeader := "\n" + w.startTime.Format("2006-01-02 15:04:05") + "\n"
+
+	// 只在第一次写入时输出时间戳
+	if w.lastTime.IsZero() {
+		// 写入一个空行和时间头
+		timeHeader := "\n" + w.startTime.Format("2006-01-02 15:04:05") + "\n\n"
 		if _, err := w.file.WriteString(timeHeader); err != nil {
 			return 0, err
 		}
+		w.lastTime = w.startTime
 	}
-	
-	w.lastTime = now
+
 	return w.file.Write(p)
 }
 
@@ -75,9 +73,9 @@ func LogInitWithConfig(name string, config *LogConfig) (*log.Logger, io.WriteClo
 	if name == "" { //没有名称时候,返回空日志
 		return log.New(os.Stdout, "", 0), nil
 	}
-	
+
 	logPath := pathutil.GetLogPath(name)
-	
+
 	// 确保日志目录存在
 	if err := pathutil.EnsureDir(pathutil.GetDataPath(pathutil.LOG_DIR)); err != nil {
 		log.Fatalf("创建日志目录失败: %v", err)
@@ -125,12 +123,12 @@ func CleanLogs(cleanDays int) error {
 
 	cutoffTime := time.Now().AddDate(0, 0, -cleanDays)
 	log.Printf("清理截止时间: %v", cutoffTime.Format("2006-01-02 15:04:05"))
-	
+
 	// 匹配日期格式的正则表达式
 	// dateRegex := regexp.MustCompile(`\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}`)
 	// 匹配分隔符的正则表达式（日期行）
 	splitRegex := regexp.MustCompile(`(?m)^(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})`)
-	
+
 	for _, file := range files {
 		// 跳过main.log
 		if file.Name() == "main.log" {
@@ -160,7 +158,7 @@ func CleanLogs(cleanDays int) error {
 			start := match[0]
 			end := match[1]
 			timeStr := string(content[start:end])
-			
+
 			// 解析时间
 			logTime, err := time.Parse("2006-01-02 15:04:05", timeStr)
 			if err != nil {

@@ -48,7 +48,7 @@ func UpdateLogCleanDays(days int) {
 func cleanLogsTask() {
 	// 记录任务开始
 	log.Printf("定时清理日志")
-	
+
 	// 使用当前的清理天数
 	logCleanLock.RLock()
 	days := logCleanDays

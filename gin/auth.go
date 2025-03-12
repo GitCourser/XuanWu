@@ -18,7 +18,7 @@ func (p *ApiData) ClearUserToken(c *gin.Context) {
 		// 将token加入黑名单
 		lib.GetTokenBlacklist().AddToBlacklist(cookie)
 	}
-	
+
 	// 清除cookie
 	c.SetCookie("cookie", "", -1, "/", "", false, false)
 }
@@ -41,14 +41,14 @@ func (p *ApiData) CookieHandler() gin.HandlerFunc {
 						return
 					}
 				}
-				
+
 				// 检查token是否在黑名单中
 				if lib.GetTokenBlacklist().IsBlacklisted(cookie) {
 					r.AuthMesage(c)
 					c.Abort()
 					return
 				}
-				
+
 				//解密
 				username, err := lib.DecryptByAes(cookie)
 				if err != nil {
@@ -87,18 +87,18 @@ func (p *ApiData) LoginHandle(c *gin.Context) {
 		r.ErrMesage(c, "密码错误")
 		return
 	}
-	
+
 	// 生成token时加入时间戳确保唯一性
 	tokenStr := fmt.Sprintf("%s_%d", req.Username, time.Now().Unix())
 	//加密
 	str, _ := lib.EncryptByAes([]byte(tokenStr))
-	
+
 	// 使用全局配置的Cookie过期时间
 	expireSeconds := GetCookieExpireDays() * 24 * 60 * 60
-	
+
 	//设置cookie
 	c.SetCookie("cookie", str, expireSeconds, "/", "", false, false)
-	
+
 	r.OkMesageData(c, "登录成功", gin.H{
 		"token":  str,
 		"maxAge": expireSeconds,

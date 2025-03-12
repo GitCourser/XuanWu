@@ -23,7 +23,7 @@ func HandleWorkDir(workDir string) string {
 	if workDir == "" {
 		return pathutil.GetDataPath("")
 	}
-	
+
 	// Windows系统检查盘符
 	if config.IsWindows {
 		if len(workDir) >= 2 && workDir[1] == ':' {
@@ -71,7 +71,7 @@ func newEncodingScanner(reader io.Reader) *bufio.Scanner {
 func ExecTask(command string, workDir string, logger *log.Logger) error {
 	// 记录开始时间
 	startTime := time.Now()
-	
+
 	// 如果logger实现了我们的接口，设置开始时间
 	if tw, ok := logger.Writer().(xwlog.TaskLogWriter); ok {
 		tw.SetStartTime(startTime)
@@ -79,7 +79,7 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 
 	// 处理工作目录
 	workDir = HandleWorkDir(workDir)
-	
+
 	// 创建命令
 	var cmd *exec.Cmd
 	if config.IsWindows {
@@ -87,12 +87,12 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 	} else {
 		cmd = exec.Command("sh", "-c", command)
 	}
-	
+
 	// 设置工作目录
 	if workDir != "" {
 		cmd.Dir = workDir
 	}
-	
+
 	// 获取输出管道
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -102,15 +102,15 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 	if err != nil {
 		return err
 	}
-	
+
 	// 使用WaitGroup等待所有输出读取完成
 	var wg sync.WaitGroup
-	
+
 	// 开始执行命令
 	if err := cmd.Start(); err != nil {
 		return err
 	}
-	
+
 	// 异步读取标准输出
 	wg.Add(1)
 	go func() {
@@ -120,7 +120,7 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 			logger.Println(scanner.Text())
 		}
 	}()
-	
+
 	// 异步读取标准错误
 	wg.Add(1)
 	go func() {
@@ -130,16 +130,16 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 			logger.Println(scanner.Text())
 		}
 	}()
-	
+
 	// 等待命令执行完成
 	err = cmd.Wait()
-	
+
 	// 等待所有输出读取完成
 	wg.Wait()
 
 	// 计算并输出执行用时
 	duration := time.Since(startTime)
-	logger.Printf("任务完成，用时：%v\n", duration)
-	
+	logger.Printf("\n任务完成，用时: %v\n", duration)
+
 	return err
 }

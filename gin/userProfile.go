@@ -40,11 +40,11 @@ func InitGlobalConfig() {
 	if err != nil {
 		return
 	}
-	
+
 	if days := cfg.Get("cookie_expire_days").Int(); days > 0 {
 		globalCookieExpireDays = int(days)
 	}
-	
+
 	if days := cfg.Get("log_clean_days").Int(); days > 0 {
 		globalLogCleanDays = int(days)
 	}

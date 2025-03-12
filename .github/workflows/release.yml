@@ -44,6 +44,7 @@ jobs:
         goarch: ${{ matrix.goarch }}
         goversion: "1.24"
         binary_name: "xuanwu"
+        ldflags: "-s -w"
 
   build-docker:
     name: Build Docker Image

@@ -42,13 +42,13 @@ func HandlerTaskList(c *gin.Context) {
 
 	var taskList []TaskInfo
 	tasks := cfg.Get("task")
-	
+
 	// 获取所有运行中任务的映射
 	runningTasks := make(map[string]cron.EntryID)
 	for id, task := range mycron.TaskData {
 		runningTasks[task.Name] = id
 	}
-	
+
 	// 遍历配置中的所有任务
 	tasks.ForEach(func(key, value gjson.Result) bool {
 		task := TaskInfo{
@@ -65,7 +65,7 @@ func HandlerTaskList(c *gin.Context) {
 			Enable:  value.Get("enable").Bool(),
 			Status:  "stopped", // 默认状态为停止
 		}
-		
+
 		// 如果任务正在运行，添加运行时信息
 		if id, exists := runningTasks[task.Name]; exists {
 			for _, entry := range mycron.C.Entries() {
@@ -77,7 +77,7 @@ func HandlerTaskList(c *gin.Context) {
 				}
 			}
 		}
-		
+
 		taskList = append(taskList, task)
 		return true
 	})
