@@ -42,7 +42,6 @@ docker run -d \
 
 #### Windows 特殊说明
 - 可用 `-hide` 参数隐藏命令窗口（在快捷方式中添加）
-- 不支持在软件中设置环境变量
 
 ## 安全相关
 
@@ -79,4 +78,4 @@ docker run -d \
 ## 自编译
 
 [前端UI](https://github.com/GitCourser/xuanwu-ui) 构建后将 `dist` 放入后端项目的 `public` 中，也可直接下载构建好的 [Releases](https://github.com/GitCourser/xuanwu-ui/releases)  
-后端用 `go 1.24` 编译  
+后端用 `go 1.24` 编译
