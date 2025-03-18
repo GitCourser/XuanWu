@@ -205,7 +205,7 @@ func HandlerEnableTask(c *gin.Context) {
 			// 更新配置文件
 			jp := &JsonParams{data: cfg.Raw}
 			jp.Set(fmt.Sprintf("task.%v.enable", i), true)
-			configPath := pathutil.GetDataPath("config.json")
+			configPath := pathutil.GetConfigPath()
 			err := config.WriteConfigFile(configPath, []byte(jp.data))
 			if err != nil {
 				r.ErrMesage(c, "启用失败,配置文件写入失败")
@@ -262,7 +262,7 @@ func HandlerDisableTask(c *gin.Context) {
 			// 更新配置文件
 			jp := &JsonParams{data: cfg.Raw}
 			jp.Set(fmt.Sprintf("task.%v.enable", i), false)
-			configPath := pathutil.GetDataPath("config.json")
+			configPath := pathutil.GetConfigPath()
 			err := config.WriteConfigFile(configPath, []byte(jp.data))
 			if err != nil {
 				r.ErrMesage(c, "禁用失败,配置文件写入失败")

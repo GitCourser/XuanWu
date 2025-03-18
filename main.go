@@ -65,7 +65,7 @@ func main() {
 	go xuanwu.CronInit(cfg)
 
 	fmt.Println(time.Now())
-	log.Println("玄武启动, 版本: v" + config.Version)
+	log.Println("玄武启动，版本：v" + config.Version)
 
 	<-sigChan
 }

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -16,6 +17,52 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
 )
+
+// 从env.ini文件加载环境变量
+func loadEnvFromIni() error {
+    envPath := pathutil.GetEnvPath()
+
+    // 检查文件是否存在
+    if _, err := os.Stat(envPath); os.IsNotExist(err) {
+        return nil // 文件不存在，直接返回
+    }
+
+    // 打开文件
+    file, err := os.Open(envPath)
+    if err != nil {
+        return err
+    }
+    defer file.Close()
+
+    // 创建scanner
+    scanner := bufio.NewScanner(file)
+
+    // 逐行读取
+    for scanner.Scan() {
+        line := strings.TrimSpace(scanner.Text())
+
+        // 跳过空行和注释
+        if line == "" || strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+            continue
+        }
+
+        // 分割键值对
+        parts := strings.SplitN(line, "=", 2)
+        if len(parts) != 2 {
+            continue // 跳过不符合格式的行
+        }
+
+        key := strings.TrimSpace(parts[0])
+        value := strings.TrimSpace(parts[1])
+
+        // 设置环境变量
+        if key != "" {
+            os.Setenv(key, value)
+        }
+    }
+
+    return scanner.Err()
+}
 
 // 处理工作目录路径
 func HandleWorkDir(workDir string) string {
@@ -79,6 +126,11 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 
 	// 处理工作目录
 	workDir = HandleWorkDir(workDir)
+
+	// 加载环境变量
+	if err := loadEnvFromIni(); err != nil {
+		logger.Printf("加载环境变量失败: %v\n", err)
+	}
 
 	// 创建命令
 	var cmd *exec.Cmd

@@ -195,7 +195,7 @@ func (p *ApiData) HandlerUpdateUserProfile(c *gin.Context) {
 	}
 
 	// 写入配置文件
-	configPath := pathutil.GetDataPath("config.json")
+	configPath := pathutil.GetConfigPath()
 	if err := config.WriteConfigFile(configPath, []byte(jsonStr)); err != nil {
 		r.ErrMesage(c, "配置文件写入失败")
 		return

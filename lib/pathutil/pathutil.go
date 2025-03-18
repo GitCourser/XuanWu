@@ -6,9 +6,10 @@ import (
 )
 
 const (
-	DATA_DIR   = "data"
-	LOG_DIR    = "logs"
-	CONFIG_DIR = "config"
+	DATA_DIR    = "data"
+	LOG_DIR     = "logs"
+	CONFIG_FILE = "config.json"
+	ENV_FILE    = "env.ini"
 )
 
 var (
@@ -46,8 +47,13 @@ func GetLogPath(filename string) string {
 }
 
 // GetConfigPath 获取配置文件路径
-func GetConfigPath(filename string) string {
-	return filepath.Join(rootDir, DATA_DIR, CONFIG_DIR, filename)
+func GetConfigPath() string {
+	return filepath.Join(rootDir, DATA_DIR, CONFIG_FILE)
+}
+
+// GetEnvPath 获取环境变量文件路径
+func GetEnvPath() string {
+	return filepath.Join(rootDir, DATA_DIR, ENV_FILE)
 }
 
 // EnsureDir 确保目录存在

@@ -83,7 +83,7 @@ func HandlerAddTask(c *gin.Context) {
 			jp.Set(fmt.Sprintf("task.%v.workdir", i), workdir)
 			jp.Set(fmt.Sprintf("task.%v.exec", i), exec)
 			jp.Set(fmt.Sprintf("task.%v.enable", i), jsonData["enable"])
-			configPath := pathutil.GetDataPath("config.json")
+			configPath := pathutil.GetConfigPath()
 			err := config.WriteConfigFile(configPath, []byte(jp.data))
 			if err != nil {
 				r.ErrMesage(c, "更新失败,配置文件写入失败")
@@ -98,7 +98,7 @@ func HandlerAddTask(c *gin.Context) {
 		var newObj map[string]interface{}
 		json.Unmarshal([]byte(jp.data), &newObj)
 		value, _ := sjson.Set(cfg.Raw, "task.-1", newObj)
-		configPath := pathutil.GetDataPath("config.json")
+		configPath := pathutil.GetConfigPath()
 		err = config.WriteConfigFile(configPath, []byte(value))
 		if err != nil {
 			r.ErrMesage(c, "添加失败,配置文件写入失败")
@@ -169,7 +169,7 @@ func HandlerDeleteTask(c *gin.Context) {
 	for i, isname := range result.Array() {
 		if isname.String() == name {
 			value, _ := sjson.Delete(cfg.Raw, fmt.Sprintf("task.%v", i))
-			configPath := pathutil.GetDataPath("config.json")
+			configPath := pathutil.GetConfigPath()
 			err := config.WriteConfigFile(configPath, []byte(value))
 			if err != nil {
 				r.ErrMesage(c, "删除失败,配置文件写入失败")

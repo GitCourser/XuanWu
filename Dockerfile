@@ -20,7 +20,7 @@ ENV XW_HOME=/app
 ENV TZ=Asia/Shanghai
 ENV PYTHONPATH=${XW_HOME}
 ENV NODE_PATH="/usr/local/lib/node_modules:${XW_HOME}"
-ENV NODE_OPTIONS=--tls-cipher-list=DEFAULT@SECLEVEL=0
+ENV NODE_OPTIONS="--tls-cipher-list=DEFAULT@SECLEVEL=0"
 
 RUN apk add --no-cache libstdc++ libgcc && \
     npm install -g --no-cache got@~11.8.0 && \
@@ -34,8 +34,6 @@ RUN apk add --no-cache libstdc++ libgcc && \
     wget https://github.com/whyour/qinglong/raw/refs/heads/develop/sample/notify.py -O /app/notify.py && \
     sed -i 's/+ (await one(/\/\/ (await one(/' /app/notify.js && \
     sed -i 's/+ one(/# one(/' /app/notify.py && \
-    printf '#!/bin/sh\n\n. ${XW_HOME}/data/Env.sh\n"$@"\n' > /usr/local/bin/xw && \
-    chmod +x /usr/local/bin/xw && \
     chmod +x entrypoint.sh && \
     rm -f /usr/local/bin/yarn* && \
     rm -rf /var/cache/apk/* && \

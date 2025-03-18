@@ -19,7 +19,7 @@ var (
 
 // 将config文件读取到json字符串
 func ReadConfigFileToJson() (gjson.Result, error) {
-	configPath := pathutil.GetDataPath("config.json")
+	configPath := pathutil.GetConfigPath()
 	jsonByte, err := os.ReadFile(configPath)
 	if err != nil {
 		fmt.Println("配置文件读取失败")

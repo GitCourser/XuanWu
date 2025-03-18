@@ -314,6 +314,58 @@ func HandlerBatchUpload(c *gin.Context) {
 	response.OkData(c, results)
 }
 
+// 重命名文件或目录
+func HandlerFileRename(c *gin.Context) {
+    var req struct {
+        Path    string `json:"path"`     // 原路径
+        NewPath string `json:"new_path"` // 新路径
+    }
+
+    if err := c.ShouldBindJSON(&req); err != nil {
+        response.ErrMesage(c, "无效的请求参数")
+        return
+    }
+
+    if req.Path == "" || req.NewPath == "" {
+        response.ErrMesage(c, "路径不能为空")
+        return
+    }
+
+    // 验证原路径
+    oldFullPath := validatePath(req.Path)
+    if oldFullPath == "" {
+        response.ErrMesage(c, "原路径非法")
+        return
+    }
+
+    // 验证新路径
+    newFullPath := validatePath(req.NewPath)
+    if newFullPath == "" {
+        response.ErrMesage(c, "新路径非法")
+        return
+    }
+
+    // 检查原路径是否存在
+    if _, err := os.Stat(oldFullPath); err != nil {
+        response.ErrMesage(c, "原文件不存在")
+        return
+    }
+
+    // 检查新路径是否已存在
+    if _, err := os.Stat(newFullPath); err == nil {
+        response.ErrMesage(c, "目标文件已存在")
+        return
+    }
+
+    // 执行重命名
+    if err := os.Rename(oldFullPath, newFullPath); err != nil {
+        response.ErrMesage(c, "重命名失败: "+err.Error())
+        return
+    }
+
+    response.OkMesage(c, "重命名成功")
+}
+
 // 创建文件夹
 func HandlerMkdir(c *gin.Context) {
 	var req struct {
@@ -342,4 +394,4 @@ func HandlerMkdir(c *gin.Context) {
 	}
 
 	response.OkMesage(c, "创建成功")
-} 
+}

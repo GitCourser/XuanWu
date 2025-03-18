@@ -74,6 +74,7 @@ func (p *ApiData) Init() {
 	routeFile.GET("/content", HandlerFileContent) // 获取文件内容
 	routeFile.POST("/edit", HandlerFileEdit)     // 编辑文件
 	routeFile.GET("/delete", HandlerFileDelete)  // 删除文件
+	routeFile.POST("/rename", HandlerFileRename) // 重命名文件
 
 	// 静态文件处理
 	distFS, err := fs.Sub(public.Public, "dist")
@@ -104,10 +105,6 @@ func (p *ApiData) Init() {
 				c.Status(http.StatusNotFound)
 				return
 			}
-			// 回退到index.html时也添加缓存
-			c.Header("Cache-Control", "max-age=31536000, public")
-			c.Data(http.StatusOK, "text/html", content)
-			return
 		}
 
 		// 设置适当的 Content-Type
@@ -119,8 +116,6 @@ func (p *ApiData) Init() {
 			c.Header("Content-Type", "application/javascript")
 		}
 
-		// 添加缓存头
-		c.Header("Cache-Control", "max-age=31536000, public")
 		c.Data(http.StatusOK, c.ContentType(), content)
 	})
 
