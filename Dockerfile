@@ -18,8 +18,8 @@ COPY --from=builder /app/build/. .
 
 ENV XW_HOME=/app
 ENV TZ=Asia/Shanghai
-ENV PYTHONPATH=${XW_HOME}
-ENV NODE_PATH="/usr/local/lib/node_modules:${XW_HOME}"
+ENV PYTHONPATH=${XW_HOME}/data
+ENV NODE_PATH="/usr/local/lib/node_modules:${XW_HOME}/data"
 ENV NODE_OPTIONS="--tls-cipher-list=DEFAULT@SECLEVEL=0"
 
 RUN apk add --no-cache libstdc++ libgcc && \

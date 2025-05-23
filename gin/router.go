@@ -105,6 +105,10 @@ func (p *ApiData) Init() {
 				c.Status(http.StatusNotFound)
 				return
 			}
+			// 回退到index.html时也添加缓存
+			c.Header("Cache-Control", "max-age=31536000, public")
+			c.Data(http.StatusOK, "text/html", content)
+			return
 		}
 
 		// 设置适当的 Content-Type
@@ -116,6 +120,8 @@ func (p *ApiData) Init() {
 			c.Header("Content-Type", "application/javascript")
 		}
 
+		// 添加缓存头
+		c.Header("Cache-Control", "max-age=31536000, public")
 		c.Data(http.StatusOK, c.ContentType(), content)
 	})
 
