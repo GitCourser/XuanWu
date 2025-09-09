@@ -110,3 +110,20 @@ func (p *ApiData) LogoutHandler(c *gin.Context) {
 	p.ClearUserToken(c)
 	r.OkMesage(c, "退出登录成功")
 }
+
+// 检查是否为默认用户名密码
+func (p *ApiData) CheckDefaultCredentials(c *gin.Context) {
+	// 定义默认用户名和密码
+	defaultUsername := "admin"
+	defaultPassword := lib.SHA256("admin") // admin的SHA256值
+
+	// 获取当前用户信息
+	userInfo := GetUserInfo()
+
+	// 检查用户名和密码是否都为默认值
+	isDefault := userInfo.Username == defaultUsername && userInfo.Password == defaultPassword
+
+	r.OkData(c, gin.H{
+		"is_default": isDefault,
+	})
+}

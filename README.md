@@ -14,7 +14,8 @@
 - 在线管理文件
 - 在线查看任务日志
 - 任务日志按期自动清理
-- cron支持秒级扩展
+- 任务导入导出
+- Cron支持秒级扩展
 
 ## 版本
 
@@ -22,11 +23,11 @@
 
 镜像中包含 `python 3.11` 和 `nodejs 20` 环境
 
-```sh
+```
 docker pull dkcourser/xuanwu
 ```
-建一个目录用于保存数据，挂载路径 `/app/data`，默认端口：4165
-```sh
+建一个目录用于保存数据，挂载路径 `/app/data`，默认端口：4165，可用环境变量 `XW_PORT` 修改容器端口，也可不要端口直接用 `UDS` 监听
+```
 docker run -d \
   -p 4165:4165 \
   -v $PWD/xuanwu:/app/data \
@@ -74,6 +75,17 @@ docker run -d \
     ]
 }
 ```
+
+## 端口设置
+
+优先级：环境变量 `XW_PORT` > 配置文件 `port` > 默认 `4165`  
+`XW_PORT` 在 `Linux` 中可设置为 `Unix Domain Socket (UDS)` 用于 `caddy/nginx` 反代
+```
+XW_PORT=8080
+XW_PORT=/tmp/xuanwu.sock
+```
+Caddy：`reverse_proxy unix//tmp/xuanwu.sock`  
+Nginx：`proxy_pass unix:/tmp/xuanwu.sock;`
 
 ## 自编译
 

@@ -4,8 +4,12 @@ import (
 	"fmt"
 	"io/fs"
 	"log"
+	"net"
 	"net/http"
+	"os"
+	"strconv"
 	"strings"
+	"xuanwu/config"
 	"xuanwu/gin/cron"
 	"xuanwu/public"
 
@@ -21,15 +25,31 @@ type ApiData struct {
 	Port      string
 }
 
+// 判断字符串是否为UDS路径（包含路径分隔符且不是纯数字）
+func isUDSPath(port string) bool {
+	// 如果是纯数字，则认为是端口号
+	if _, err := strconv.Atoi(port); err == nil {
+		return false
+	}
+	// 如果包含路径分隔符，则认为是UDS路径
+	return strings.Contains(port, "/")
+}
+
 func InitApi(cfg gjson.Result, addApi map[string]string) {
 	ApiData := &ApiData{
 		Cookie: "", //刷新token
 		Port:   "4165",
 	}
 	ApiData.AddApi = addApi
-	if cfg.Get("port").String() != "" {
+
+	// 端口配置优先级：环境变量 XW_PORT > 配置文件 port > 默认值 4165
+	xwPort := os.Getenv("XW_PORT")
+	if xwPort != "" {
+		ApiData.Port = xwPort
+	} else if cfg.Get("port").String() != "" {
 		ApiData.Port = cfg.Get("port").String()
 	}
+
 	ApiData.Init()
 }
 
@@ -39,6 +59,21 @@ func (p *ApiData) Init() {
 	RootRoute := gin.Default()
 	p.RootRoute = RootRoute
 	RootRoute.Use(p.CookieHandler()) //全局用户认证
+
+	// 添加缓存中间件
+	RootRoute.Use(func(c *gin.Context) {
+		path := c.Request.URL.Path
+
+		// 缓存过滤
+		shouldNotCache := strings.HasPrefix(path, "/api") ||
+			path == "/" ||
+			path == "/index.html"
+
+		// 静态资源长期缓存（1年）
+		if !shouldNotCache {
+			c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		}
+	})
 
 	routeApi := RootRoute.Group("/api") // api接口总路由
 
@@ -51,6 +86,7 @@ func (p *ApiData) Init() {
 	routeAuth := routeApi.Group("/auth")
 	routeAuth.POST("/login", p.LoginHandle)
 	routeAuth.GET("/logout", p.LogoutHandler)
+	routeAuth.GET("/check-default", p.CheckDefaultCredentials) // 检查是否为默认用户名密码
 
 	// 定时任务接口
 	routeCron := routeApi.Group("/cron")
@@ -58,6 +94,7 @@ func (p *ApiData) Init() {
 	routeCron.GET("/list", cron.HandlerTaskList)    //获取任务列表（包含运行状态）
 	routeCron.GET("/delete", cron.HandlerDeleteTask)   //删除源任务
 	routeCron.POST("/add", cron.HandlerAddTask)        //添加任务源
+	routeCron.POST("/batch-add", cron.HandlerBatchAddTask) //批量添加任务源
 	routeCron.POST("/update", cron.HandlerAddTask)     //更新任务（复用添加接口）
 	/* 任务控制 */
 	routeCron.GET("/enable", cron.HandlerEnableTask)   //启用任务
@@ -105,10 +142,6 @@ func (p *ApiData) Init() {
 				c.Status(http.StatusNotFound)
 				return
 			}
-			// 回退到index.html时也添加缓存
-			c.Header("Cache-Control", "max-age=31536000, public")
-			c.Data(http.StatusOK, "text/html", content)
-			return
 		}
 
 		// 设置适当的 Content-Type
@@ -120,11 +153,40 @@ func (p *ApiData) Init() {
 			c.Header("Content-Type", "application/javascript")
 		}
 
-		// 添加缓存头
-		c.Header("Cache-Control", "max-age=31536000, public")
 		c.Data(http.StatusOK, c.ContentType(), content)
 	})
 
-	fmt.Println("Web 端口：" + p.Port)
-	RootRoute.Run(":" + p.Port)
+	// 判断是否使用 UDS (Unix Domain Socket)
+	if isUDSPath(p.Port) && !config.IsWindows {
+		// 使用 UDS 监听
+		socketPath := p.Port
+		// 删除可能存在的旧socket文件
+		os.Remove(socketPath)
+
+		listener, err := net.Listen("unix", socketPath)
+		if err != nil {
+			log.Printf("UDS 监听失败: %v", err)
+			return
+		}
+		defer listener.Close()
+
+		// 设置socket文件权限为0666，确保nginx/caddy等反向代理可以访问
+		if err := os.Chmod(socketPath, 0666); err != nil {
+			log.Printf("设置UDS权限失败: %v", err)
+			return
+		}
+
+		fmt.Println("Web UDS：" + socketPath + " (权限: 0666)")
+		log.Printf("Web服务启动，UDS监听：%s (权限: 0666)", socketPath)
+
+		server := &http.Server{Handler: RootRoute}
+		if err := server.Serve(listener); err != nil {
+			log.Printf("UDS 服务启动失败: %v", err)
+		}
+	} else {
+		// 使用端口监听
+		fmt.Println("Web 端口：" + p.Port)
+		log.Printf("Web服务启动，端口监听：%s", p.Port)
+		RootRoute.Run(":" + p.Port)
+	}
 }

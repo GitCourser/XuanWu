@@ -87,31 +87,55 @@ func HandleWorkDir(workDir string) string {
 	return pathutil.GetDataPath(workDir)
 }
 
-// 将GBK编码的文本转换为UTF8
-func convertGBKToUTF8(text string) string {
-	// 如果不是Windows系统,直接返回
-	if !config.IsWindows {
-		return text
+// 检查字符串是否为有效的UTF-8
+func isValidUTF8(s string) bool {
+	// 简单检查：如果包含常见的UTF-8中文字符或者没有乱码特征，认为是UTF-8
+	for _, r := range s {
+		if r == '\uFFFD' { // UTF-8解码失败的替换字符
+			return false
+		}
+	}
+	return true
+}
+
+// Windows环境下的智能编码检测和转换
+func detectAndConvertEncoding(data []byte) string {
+	// 先尝试UTF-8解码
+	if utf8Text := string(data); isValidUTF8(utf8Text) {
+		return utf8Text
 	}
 
-	// 创建GBK到UTF8的转换器
-	reader := transform.NewReader(strings.NewReader(text), simplifiedchinese.GBK.NewDecoder())
+	// 如果UTF-8解码失败，尝试GBK转UTF-8
+	reader := transform.NewReader(bytes.NewReader(data), simplifiedchinese.GBK.NewDecoder())
 	var buf bytes.Buffer
-	_, err := io.Copy(&buf, reader)
-	if err != nil {
-		return text // 如果转换失败,返回原文
+	if _, err := io.Copy(&buf, reader); err == nil {
+		return buf.String()
 	}
-	return buf.String()
+
+	// 如果都失败，返回原始字符串
+	return string(data)
 }
 
 // 创建一个支持编码转换的Scanner
 func newEncodingScanner(reader io.Reader) *bufio.Scanner {
-	if config.IsWindows {
-		// Windows环境下,创建一个GBK到UTF8的转换器
-		utf8Reader := transform.NewReader(reader, simplifiedchinese.GBK.NewDecoder())
-		return bufio.NewScanner(utf8Reader)
+	// Linux/Unix系统统一使用UTF-8，无需转换
+	if !config.IsWindows {
+		return bufio.NewScanner(reader)
 	}
-	return bufio.NewScanner(reader)
+
+	// Windows环境下使用智能编码检测
+	scanner := bufio.NewScanner(reader)
+	scanner.Split(func(data []byte, atEOF bool) (advance int, token []byte, err error) {
+		// 使用默认的分割函数
+		advance, token, err = bufio.ScanLines(data, atEOF)
+		if token != nil {
+			// 对每行进行智能编码转换
+			convertedText := detectAndConvertEncoding(token)
+			token = []byte(convertedText)
+		}
+		return
+	})
+	return scanner
 }
 
 // 执行任务命令
