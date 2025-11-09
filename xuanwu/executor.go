@@ -159,6 +159,8 @@ func ExecTask(command string, workDir string, logger *log.Logger) error {
 	// 创建命令
 	var cmd *exec.Cmd
 	if config.IsWindows {
+		// Windows中Python编码为UTF-8
+		os.Setenv("PYTHONIOENCODING", "utf8")
 		cmd = exec.Command("cmd", "/c", command)
 	} else {
 		cmd = exec.Command("sh", "-c", command)
